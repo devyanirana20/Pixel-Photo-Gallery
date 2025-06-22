@@ -71,52 +71,58 @@
       <h2 v-else>Ooops !! Looks like you have not sent any images in last 15 mins</h2>
     </div>
 
-    <script>
-      const app = new Vue({
-        el: "#app",
-        data() {
-          return {
-            callToAction: "2024 recap!!",
-            gallery: [], // Array to store gallery data
-            zoomIndex: null, // Tracks which image is zoomed
-          };
-        },
-        methods: {
-          async loadImages() {
-            try {
-              const API_URL = `https://${window.location.hostname}/api/pics`;
+   <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-              // Fetch data from the API
-              const response = await fetch(API_URL);
+  const firebaseConfig = {
+    apiKey: "AIzaSyCQa6EqExnBlWiMiI74cHVkINR_hyJYaWo",
+    authDomain: "picklegallery-a2c09.firebaseapp.com",
+    projectId: "picklegallery-a2c09",
+    storageBucket: "picklegallery-a2c09.appspot.com",
+    messagingSenderId: "388344560998",
+    appId: "1:388344560998:web:e2c768b768a5c1db9ddca7",
+    measurementId: "G-KQ8W4VFPZG"
+  };
 
-              if (!response.ok) {
-                throw new Error(`Error fetching data: ${response.statusText}`);
-              }
+  const firebaseApp = initializeApp(firebaseConfig); // ✅ no name conflict
+  const db = getFirestore(firebaseApp);
 
-              const data = await response.json();
+  const app = new Vue({
+    el: "#app",
+    data() {
+      return {
+        callToAction: "2024 recap!!",
+        gallery: [],
+        zoomIndex: null,
+      };
+    },
+    methods: {
+      async loadImages() {
+        try {
+          const snapshot = await getDocs(collection(db, "gallery")); // ✅ now using Firestore instead of Twilio
 
-              if (data.message === "No images found in the last 15 minutes.") {
-                this.gallery = [];
-              } else {
-                // Map API response to a usable format
-                this.gallery = data.files.map((file) => ({
-                  src: file.src,
-                  caption: file.caption || "No caption provided",
-                }));
-              }
-            } catch (error) {
-              console.error("Error loading images:", error.message);
-            }
-          },
-          zoomImage(index) {
-            // Toggle zoom for the clicked image
-            this.zoomIndex = this.zoomIndex === index ? null : index;
-          },
-        },
-        mounted() {
-          this.loadImages(); // Load images when component is mounted
-        },
-      });
-    </script>
+          this.gallery = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              src: data.url,
+              caption: data.caption || "No caption provided",
+            };
+          });
+
+        } catch (error) {
+          console.error("Error loading images:", error.message);
+        }
+      },
+      zoomImage(index) {
+        this.zoomIndex = this.zoomIndex === index ? null : index;
+      },
+    },
+    mounted() {
+      this.loadImages();
+    },
+  });
+</script>
   </body>
 </html>
